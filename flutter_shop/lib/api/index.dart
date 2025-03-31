@@ -16,6 +16,25 @@ class ProductService {
       throw Exception('Failed to load products');
     }
   }
+
+  fetchProduct(int productId) async {
+    var productUri = Uri.https('dummyjson.com', 'products/$productId');
+    var response = await http.get(productUri);
+
+    if (response.statusCode == 200) {
+      var data = json.decode(response.body) as Map<String, dynamic>;
+      // Products products = Products.fromJson(data);
+
+      Product product = Product(
+        id: data['id'] as int,
+        title: data['title'] as String,
+        description: data['description'] as String,
+      );
+      return product;
+    } else {
+      throw Exception('Failed to load products');
+    }
+  }
 }
 
 class Product {

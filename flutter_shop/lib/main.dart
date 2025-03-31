@@ -16,10 +16,31 @@ class MainApp extends StatelessWidget {
 
       // Define named routes
       routes: {
+        '/': (context) => const LoadingPage(),
         '/login': (context) => const LoginPage(),
         '/shop': (context) => const ShopPage(),
       },
+      onGenerateRoute: (settings) {
+        // pdp routes
+        if (settings.name?.startsWith('/shop/') ?? false) {
+          final productId = int.parse(settings.name!.split('/').last);
+          return MaterialPageRoute(
+            builder: (context) => ProductPage(productId: productId),
+          );
+        }
+
+        return null;
+      },
     );
+  }
+}
+
+class LoadingPage extends StatelessWidget {
+  const LoadingPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text('Loading');
   }
 }
 
@@ -77,6 +98,12 @@ class ShopPageState extends State<ShopPage> {
           return ListTile(
             title: Text(product.title),
             subtitle: Text(product.description),
+            trailing: OutlinedButton(
+              child: Text('Product Page'),
+              onPressed: () {
+                Navigator.pushNamed(context, '/shop/${product.id}');
+              },
+            ),
           );
         },
       ),
@@ -88,6 +115,47 @@ class ShopPageState extends State<ShopPage> {
 
     setState(() {
       _products = products;
+    });
+  }
+}
+
+class ProductPage extends StatefulWidget {
+  final int productId;
+
+  const ProductPage({super.key, required this.productId});
+
+  @override
+  ProductPageState createState() => ProductPageState();
+}
+
+class ProductPageState extends State<ProductPage> {
+  final _productsService = ProductService();
+  Product? _product;
+
+  @override
+  void initState() {
+    super.initState();
+    getProduct();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Product Page')),
+      body:
+          _product == null
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                children: [Text(_product!.title), Text(_product!.description)],
+              ),
+    );
+  }
+
+  void getProduct() async {
+    var product = await _productsService.fetchProduct(widget.productId);
+
+    setState(() {
+      _product = product;
     });
   }
 }
