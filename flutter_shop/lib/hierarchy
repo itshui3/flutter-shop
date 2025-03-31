@@ -1,0 +1,6 @@
+App
+--route: Scaffold(login)
+--appBar: navigation things(?)
+--body: Form
+--route: Scaffold(shop)
+behavior: should fetch all products,

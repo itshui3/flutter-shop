@@ -1,0 +1,5 @@
+[0] - how to attach navigation behavior to start shopping button? [done]
+[1] - how to fetch? [done]
+[2] - how to deserialize json within model classes with factory constructor? [done]
+[3] - how to render a data in a list format? [done]
+[4] - how to dynamically route? [current]
