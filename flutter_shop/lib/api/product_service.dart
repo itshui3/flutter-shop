@@ -23,7 +23,6 @@ class ProductService {
 
     if (response.statusCode == 200) {
       var data = json.decode(response.body) as Map<String, dynamic>;
-      // Products products = Products.fromJson(data);
 
       Product product = Product(
         id: data['id'] as int,
