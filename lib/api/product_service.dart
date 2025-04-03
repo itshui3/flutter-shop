@@ -28,6 +28,19 @@ class ProductService {
         id: data['id'] as int,
         title: data['title'] as String,
         description: data['description'] as String,
+        price: data['price'] as double,
+        images:
+            (data['images'] as List<dynamic>)
+                .map((image) => image as String)
+                .toList(),
+        thumbnail: data['thumbnail'] as String,
+        rating: data['rating'] as double,
+        reviews:
+            data['reviews'] != null
+                ? (data['reviews'] as List<dynamic>)
+                    .map((reviewJson) => Review.fromJson(reviewJson))
+                    .toList()
+                : [],
       );
       return product;
     } else {
@@ -36,12 +49,49 @@ class ProductService {
   }
 }
 
+class Review {
+  final int rating;
+  final String comment;
+  final DateTime date;
+  final String reviewerName;
+  final String reviewerEmail;
+
+  Review({
+    required this.rating,
+    required this.comment,
+    required this.date,
+    required this.reviewerName,
+    required this.reviewerEmail,
+  });
+
+  Review.fromJson(Map<String, dynamic> json)
+    : rating = json['rating'] as int,
+      comment = json['comment'] as String,
+      date = DateTime.parse(json['date'] as String),
+      reviewerName = json['reviewerName'] as String,
+      reviewerEmail = json['reviewerEmail'] as String;
+}
+
 class Product {
   final int id;
   final String title;
   final String description;
+  final double price;
+  final List<String> images;
+  final String thumbnail;
+  final double rating;
+  final List<Review> reviews;
 
-  Product({required this.id, required this.title, required this.description});
+  Product({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.price,
+    required this.images,
+    required this.thumbnail,
+    required this.rating,
+    required this.reviews,
+  });
 }
 
 class Products {
@@ -57,6 +107,19 @@ class Products {
                   id: productJson['id'] as int,
                   title: productJson['title'] as String,
                   description: productJson['description'] as String,
+                  price: productJson['price'] as double,
+                  images:
+                      (productJson['images'] as List<dynamic>)
+                          .map((image) => image as String)
+                          .toList(),
+                  thumbnail: productJson['thumbnail'] as String,
+                  rating: productJson['rating'] as double,
+                  reviews:
+                      productJson['reviews'] != null
+                          ? (productJson['reviews'] as List<dynamic>)
+                              .map((reviewJson) => Review.fromJson(reviewJson))
+                              .toList()
+                          : [],
                 ),
               )
               .toList();
