@@ -213,14 +213,24 @@ class ShopPageState extends State<ShopPage> {
         itemBuilder: (context, index) {
           final product = _products.products[index];
           return ListTile(
-            title: Text(product.title),
-            subtitle: Text(product.description),
-            trailing: FilledButton(
-              child: Text('Product Page'),
-              onPressed: () {
-                Navigator.pushNamed(context, '/shop/${product.id}');
-              },
+            leading: Image.network(product.thumbnail, fit: BoxFit.cover),
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: Text(product.title)),
+                Text(
+                  '\$${product.price.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    color: Colors.green[700],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
+            subtitle: Text(product.description),
+            onTap: () {
+              Navigator.pushNamed(context, '/shop/${product.id}');
+            },
           );
         },
       ),
@@ -263,7 +273,101 @@ class ProductPageState extends State<ProductPage> {
           _product == null
               ? const Center(child: CircularProgressIndicator())
               : Column(
-                children: [Text(_product!.title), Text(_product!.description)],
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        flex: 1,
+                        child: Image.network(
+                          _product!.images[0],
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Flexible(
+                        // Wrap details column in Flexible
+                        flex: 1,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.star,
+                                  color: Colors.amber,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _product!.rating.toString(),
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(color: Colors.black54),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _product!.title,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _product!.description,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '\$${_product!.price.toStringAsFixed(2)}',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleLarge?.copyWith(
+                                    color: Colors.green[700],
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text('add to cart filler'),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Reviews
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 16.0),
+                      child: Text(
+                        'Reviews',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ListView.builder(
+                    itemCount: _product!.reviews.length,
+                    shrinkWrap: true,
+                    itemBuilder: (context, index) {
+                      final review = _product!.reviews[index];
+                      return ListTile(
+                        title: Text(review.comment),
+                        subtitle: Text(
+                          '${review.rating} stars by ${review.reviewerName}',
+                        ),
+                        trailing: Text(
+                          review.date.toLocal().toString().split(' ')[0],
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
     );
   }
