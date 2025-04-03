@@ -14,9 +14,15 @@ class AuthModel extends ChangeNotifier {
   String? _token;
 
   String? get token => _token;
+  bool get isAuthenticated => _token != null;
 
   void setToken(String? newToken) {
     _token = newToken;
+    notifyListeners(); // Notify listeners about the change
+  }
+
+  void clearToken() {
+    _token = null;
     notifyListeners(); // Notify listeners about the change
   }
 }

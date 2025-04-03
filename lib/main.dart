@@ -62,6 +62,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class LoginScreenState extends State<LoginPage> {
+  final horizontalPadding = 30.0;
   final _loginService = LoginService();
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
@@ -70,59 +71,108 @@ class LoginScreenState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
-      body: Form(
-        key: _formKey,
+      appBar: AppBar(title: Text('Flutter Shop')),
+      body: Padding(
+        padding: EdgeInsets.only(
+          left: horizontalPadding,
+          right: horizontalPadding,
+        ),
         child: Column(
           children: [
-            TextField(
-              controller: _usernameController,
-              decoration: InputDecoration(labelText: 'Username'),
-            ),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(labelText: 'Password'),
+            Image.asset(
+              'assets/images/shopping-cart-pink.png',
+              width: 50,
+              height: 50,
+              fit: BoxFit.cover,
             ),
             Consumer<AuthModel>(
-              builder:
-                  (context, auth, child) => OutlinedButton(
-                    child: const Text('Login'),
-                    onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        // Perform login action
-                        var loginResponse = await _loginService.login(
-                          _usernameController.text,
-                          _passwordController.text,
-                        );
+              builder: (context, auth, child) {
+                if (auth.isAuthenticated) {
+                  return Column(
+                    children: [
+                      const Text('Already logged in'),
+                      FilledButton(
+                        child: const Text('Logout'),
+                        onPressed: () {
+                          auth.clearToken();
+                        },
+                      ),
+                    ],
+                  );
+                } else {
+                  return Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: TextField(
+                            controller: _usernameController,
+                            decoration: InputDecoration(labelText: 'Username'),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: TextField(
+                            controller: _passwordController,
+                            decoration: InputDecoration(labelText: 'Password'),
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/shop');
+                            },
+                            child: Text('Shop as guest'),
+                          ),
+                        ),
+                        FilledButton(
+                          style: ButtonStyle(),
+                          child: const Text('Login'),
+                          onPressed: () async {
+                            if (_formKey.currentState!.validate()) {
+                              // Perform login action
+                              var loginResponse = await _loginService.login(
+                                _usernameController.text,
+                                _passwordController.text,
+                              );
 
-                        if (loginResponse.isLoggedInSuccessfully) {
-                          // Navigate to shop page
-                          auth.setToken(loginResponse.authToken);
-                          Navigator.pushNamed(context, '/shop');
-                        } else {
-                          // Show error message
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                loginResponse.errorMessage ?? 'Login failed',
-                              ),
-                            ),
-                          );
-                        }
-                      }
-                    },
-                  ),
+                              if (loginResponse.isLoggedInSuccessfully) {
+                                // Navigate to shop page
+                                auth.setToken(loginResponse.authToken);
+                                Navigator.pushNamed(context, '/shop');
+                              } else {
+                                // Show error message
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      loginResponse.errorMessage ??
+                                          'Login failed',
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              },
             ),
           ],
         ),
       ),
-
-      bottomSheet: OutlinedButton(
-        child: const Text('Start Shopping'),
-        onPressed: () {
-          Navigator.pushNamed(context, '/shop');
-        },
-      ),
+      // bottomSheet: Expanded(
+      //   child: FilledButton(
+      //     child: const Text('Start Shopping'),
+      //     onPressed: () {
+      //       Navigator.pushNamed(context, '/shop');
+      //     },
+      //   ),
+      // ),
     );
   }
 
@@ -165,7 +215,7 @@ class ShopPageState extends State<ShopPage> {
           return ListTile(
             title: Text(product.title),
             subtitle: Text(product.description),
-            trailing: OutlinedButton(
+            trailing: FilledButton(
               child: Text('Product Page'),
               onPressed: () {
                 Navigator.pushNamed(context, '/shop/${product.id}');
