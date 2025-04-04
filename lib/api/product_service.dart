@@ -13,8 +13,12 @@ class ProductService {
     }
   }
 
-  fetchProductsByCategory(String category) async {
-    var productsUri = Uri.https('dummyjson.com', 'products/category/$category');
+  fetchProductsByCategory(int page, int limit, String category) async {
+    var productsUri = Uri.https(
+      'dummyjson.com',
+      'products/category/$category',
+      {'limit': limit.toString(), 'skip': (page * limit).toString()},
+    );
     var response = await http.get(productsUri);
     if (response.statusCode == 200) {
       var data = json.decode(response.body) as Map<String, dynamic>;

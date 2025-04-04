@@ -217,10 +217,11 @@ class ShopPageState extends State<ShopPage> {
   final _searchController = TextEditingController();
   Products _products = Products(products: []);
 
-  String? selectedCategory;
+  bool isCategoryFetch = false;
+  String? selectedCategory = 'Select Category';
   int page = 0;
   int limit = 20;
-  final List<int> limitOptions = [10, 20, 50];
+  final List<int> limitOptions = [3, 5, 10, 20, 50];
   String query = '';
 
   @override
@@ -299,31 +300,39 @@ class ShopPageState extends State<ShopPage> {
 
                         final categoriesList = snapshot.data ?? [];
                         return DropdownButton<String>(
-                          value: selectedCategory ?? categoriesList[0],
+                          value: selectedCategory,
                           hint: const Text('Category'),
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           underline: const SizedBox(),
-                          items:
-                              categoriesList.map((String category) {
-                                var categoryLabel = category
-                                    .split('-')
-                                    .map(
-                                      (category) =>
-                                          category[0].toUpperCase() +
-                                          category.substring(1),
-                                    )
-                                    .join(' ');
-                                return DropdownMenuItem<String>(
-                                  value: category,
-                                  child: Text(categoryLabel),
-                                );
-                              }).toList(),
+                          items: [
+                            const DropdownMenuItem<String>(
+                              value: 'Select Category',
+                              child: Text('Select Category'),
+                            ),
+                            ...categoriesList.map((String category) {
+                              var categoryLabel = category
+                                  .split('-')
+                                  .map(
+                                    (category) =>
+                                        category[0].toUpperCase() +
+                                        category.substring(1),
+                                  )
+                                  .join(' ');
+                              return DropdownMenuItem<String>(
+                                value: category,
+                                child: Text(categoryLabel),
+                              );
+                            }),
+                          ],
                           onChanged: (String? newValue) {
                             if (newValue != null) {
                               setState(() {
                                 selectedCategory = newValue;
                               });
-                              getProductsByCategory();
+                              if (newValue != 'Select Category') {
+                                isCategoryFetch = true;
+                                getProductsByCategory();
+                              }
                             }
                           },
                         );
@@ -404,7 +413,11 @@ class ShopPageState extends State<ShopPage> {
                             setState(() {
                               page--;
                             });
-                            getProducts(query);
+                            if (isCategoryFetch) {
+                              getProductsByCategory();
+                            } else {
+                              getProducts(query);
+                            }
                           }
                           : null,
                 ),
@@ -417,7 +430,11 @@ class ShopPageState extends State<ShopPage> {
                             setState(() {
                               page++;
                             });
-                            getProducts(query);
+                            if (isCategoryFetch) {
+                              getProductsByCategory();
+                            } else {
+                              getProducts(query);
+                            }
                           }
                           : null,
                 ),
@@ -441,7 +458,11 @@ class ShopPageState extends State<ShopPage> {
                       limit = newValue as int;
                       page = 0;
                     });
-                    getProducts(query);
+                    if (isCategoryFetch) {
+                      getProductsByCategory();
+                    } else {
+                      getProducts(query);
+                    }
                   },
                 ),
               ],
@@ -457,17 +478,21 @@ class ShopPageState extends State<ShopPage> {
 
     setState(() {
       _products = products;
+      isCategoryFetch = false;
     });
   }
 
   void getProductsByCategory() async {
     if (selectedCategory != null) {
       var products = await _productsService.fetchProductsByCategory(
+        page,
+        limit,
         selectedCategory as String,
       );
 
       setState(() {
         _products = products;
+        isCategoryFetch = true;
       });
     }
   }
