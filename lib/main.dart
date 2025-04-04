@@ -216,17 +216,16 @@ class ShopPageState extends State<ShopPage> {
   final _productsService = ProductService();
   final _searchController = TextEditingController();
   Products _products = Products(products: []);
-  // List<String> categoriesList = [];
 
   String? selectedCategory;
   int page = 0;
   int limit = 20;
+  final List<int> limitOptions = [10, 20, 50];
   String query = '';
 
   @override
   void initState() {
     super.initState();
-    // getCategoriesList();
     getProducts(query);
   }
 
@@ -389,6 +388,67 @@ class ShopPageState extends State<ShopPage> {
           ],
         ),
       ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Page controls
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left),
+                  onPressed:
+                      page > 0
+                          ? () {
+                            setState(() {
+                              page--;
+                            });
+                            getProducts(query);
+                          }
+                          : null,
+                ),
+                Text('Page ${page + 1}'),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right),
+                  onPressed:
+                      _products.products.length >= limit
+                          ? () {
+                            setState(() {
+                              page++;
+                            });
+                            getProducts(query);
+                          }
+                          : null,
+                ),
+              ],
+            ),
+            // Limit dropdown
+            Row(
+              children: [
+                const Text('Items per page: '),
+                DropdownButton<int>(
+                  value: limit,
+                  items:
+                      limitOptions.map((int value) {
+                        return DropdownMenuItem<int>(
+                          value: value,
+                          child: Text(value.toString()),
+                        );
+                      }).toList(),
+                  onChanged: (int? newValue) {
+                    setState(() {
+                      limit = newValue as int;
+                      page = 0;
+                    });
+                    getProducts(query);
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -398,14 +458,6 @@ class ShopPageState extends State<ShopPage> {
     setState(() {
       _products = products;
     });
-  }
-
-  Future<List<String>> getCategoriesList() async {
-    return await _productsService.fetchCategoriesList();
-    // print(categoriesList);
-    // setState(() {
-    //   this.categoriesList = categoriesList;
-    // });
   }
 
   void getProductsByCategory() async {
