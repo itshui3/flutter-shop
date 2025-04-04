@@ -6,12 +6,14 @@ class LoginResponse {
   final String? authToken;
   final String? refreshToken;
   final String? errorMessage;
+  final int? id;
 
   LoginResponse({
     required this.isLoggedInSuccessfully,
     this.authToken,
     this.refreshToken,
     this.errorMessage,
+    this.id,
   });
 }
 
@@ -29,6 +31,7 @@ class LoginService {
         isLoggedInSuccessfully: true,
         authToken: json.decode(response.body)['accessToken'] as String,
         refreshToken: json.decode(response.body)['refreshToken'] as String,
+        id: json.decode(response.body)['id'] as int,
       );
     } else {
       return LoginResponse(

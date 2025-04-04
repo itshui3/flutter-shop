@@ -2,10 +2,34 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class ProductService {
-  fetchProducts(int page, int limit) async {
-    var productsUri = Uri.https('dummyjson.com', 'products', {
+  Future<List<String>> fetchCategoriesList() async {
+    var categoriesUri = Uri.https('dummyjson.com', 'products/category-list');
+    var response = await http.get(categoriesUri);
+    if (response.statusCode == 200) {
+      var data = json.decode(response.body) as List<dynamic>;
+      return data.map((category) => category as String).toList();
+    } else {
+      throw Exception('Failed to load categories');
+    }
+  }
+
+  fetchProductsByCategory(String category) async {
+    var productsUri = Uri.https('dummyjson.com', 'products/category/$category');
+    var response = await http.get(productsUri);
+    if (response.statusCode == 200) {
+      var data = json.decode(response.body) as Map<String, dynamic>;
+      Products products = Products.fromJson(data);
+      return products;
+    } else {
+      throw Exception('Failed to load products');
+    }
+  }
+
+  fetchProducts(int page, int limit, String query) async {
+    var productsUri = Uri.https('dummyjson.com', 'products/search', {
       'limit': limit.toString(),
       'skip': (page * limit).toString(),
+      'q': query,
     });
     var response = await http.get(productsUri);
     if (response.statusCode == 200) {
