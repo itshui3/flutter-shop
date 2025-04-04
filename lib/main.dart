@@ -221,7 +221,7 @@ class ShopPageState extends State<ShopPage> {
   String? selectedCategory = 'Select Category';
   int page = 0;
   int limit = 20;
-  final List<int> limitOptions = [10, 20, 50];
+  final List<int> limitOptions = [3, 5, 10, 20, 50];
   String query = '';
 
   @override
