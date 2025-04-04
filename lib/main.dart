@@ -21,17 +21,13 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // Set initial route to login page
       initialRoute: '/login',
-
-      // Define named routes
       routes: {
         '/': (context) => const LoadingPage(),
         '/login': (context) => const LoginPage(),
         '/shop': (context) => const ShopPage(),
       },
       onGenerateRoute: (settings) {
-        // pdp routes
         if (settings.name?.startsWith('/shop/') ?? false) {
           final productId = int.parse(settings.name!.split('/').last);
           return MaterialPageRoute(
@@ -71,7 +67,42 @@ class LoginScreenState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Flutter Shop')),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Text('Flutter Shop'),
+            GestureDetector(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Text('Flow Info'),
+                      content: const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'on sign in: store auth token, redirect to shop',
+                          ),
+                          Text(
+                            'on click shop as guest: redirect to shop without auth',
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+              child: Image.asset(
+                'assets/images/info.png',
+                width: 24,
+                height: 24,
+              ),
+            ),
+          ],
+        ),
+      ),
       body: Padding(
         padding: EdgeInsets.only(
           left: horizontalPadding,
@@ -132,14 +163,12 @@ class LoginScreenState extends State<LoginPage> {
                           child: const Text('Login'),
                           onPressed: () async {
                             if (_formKey.currentState!.validate()) {
-                              // Perform login action
                               var loginResponse = await _loginService.login(
                                 _usernameController.text,
                                 _passwordController.text,
                               );
 
                               if (loginResponse.isLoggedInSuccessfully) {
-                                // Navigate to shop page
                                 auth.setToken(loginResponse.authToken);
                                 Navigator.pushNamed(context, '/shop');
                               } else {
@@ -165,14 +194,6 @@ class LoginScreenState extends State<LoginPage> {
           ],
         ),
       ),
-      // bottomSheet: Expanded(
-      //   child: FilledButton(
-      //     child: const Text('Start Shopping'),
-      //     onPressed: () {
-      //       Navigator.pushNamed(context, '/shop');
-      //     },
-      //   ),
-      // ),
     );
   }
 
@@ -193,56 +214,210 @@ class ShopPage extends StatefulWidget {
 
 class ShopPageState extends State<ShopPage> {
   final _productsService = ProductService();
+  final _searchController = TextEditingController();
   Products _products = Products(products: []);
+  // List<String> categoriesList = [];
 
+  String? selectedCategory;
   int page = 0;
   int limit = 20;
+  String query = '';
 
   @override
   void initState() {
     super.initState();
-    getProducts();
+    // getCategoriesList();
+    getProducts(query);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Shop')),
-      body: ListView.builder(
-        itemCount: _products.products.length,
-        itemBuilder: (context, index) {
-          final product = _products.products[index];
-          return ListTile(
-            leading: Image.network(product.thumbnail, fit: BoxFit.cover),
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(child: Text(product.title)),
-                Text(
-                  '\$${product.price.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    color: Colors.green[700],
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+      appBar: AppBar(
+        title: Row(
+          children: [
+            const Text('Shop'),
+            GestureDetector(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Text('Flow Info'),
+                      content: const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'on page load: fetch categories list, use it to fetch products by category',
+                          ),
+                          Text(
+                            'on category change: fetch products by category',
+                          ),
+                          Text('on search: fetch products by query'),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+              child: Image.asset(
+                'assets/images/info.png',
+                width: 24,
+                height: 24,
+              ),
             ),
-            subtitle: Text(product.description),
-            onTap: () {
-              Navigator.pushNamed(context, '/shop/${product.id}');
-            },
-          );
-        },
+          ],
+        ),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: FutureBuilder<List<String>>(
+                      future: _productsService.fetchCategoriesList(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+
+                        if (snapshot.hasError) {
+                          return const Text('Error loading categories');
+                        }
+
+                        final categoriesList = snapshot.data ?? [];
+                        return DropdownButton<String>(
+                          value: selectedCategory ?? categoriesList[0],
+                          hint: const Text('Category'),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          underline: const SizedBox(),
+                          items:
+                              categoriesList.map((String category) {
+                                var categoryLabel = category
+                                    .split('-')
+                                    .map(
+                                      (category) =>
+                                          category[0].toUpperCase() +
+                                          category.substring(1),
+                                    )
+                                    .join(' ');
+                                return DropdownMenuItem<String>(
+                                  value: category,
+                                  child: Text(categoryLabel),
+                                );
+                              }).toList(),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              setState(() {
+                                selectedCategory = newValue;
+                              });
+                              getProductsByCategory();
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search products...',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (value) {
+                        query = value;
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: () {
+                      getProducts(query);
+                    },
+                    child: const Text('Search'),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _products.products.length,
+                itemBuilder: (context, index) {
+                  final product = _products.products[index];
+                  return ListTile(
+                    leading: Image.network(
+                      product.thumbnail,
+                      fit: BoxFit.cover,
+                    ),
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(child: Text(product.title)),
+                        Text(
+                          '\$${product.price.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            color: Colors.green[700],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    subtitle: Text(product.description),
+                    onTap: () {
+                      Navigator.pushNamed(context, '/shop/${product.id}');
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  void getProducts() async {
-    var products = await _productsService.fetchProducts(page, limit);
+  void getProducts(String query) async {
+    var products = await _productsService.fetchProducts(page, limit, query);
 
     setState(() {
       _products = products;
     });
+  }
+
+  Future<List<String>> getCategoriesList() async {
+    return await _productsService.fetchCategoriesList();
+    // print(categoriesList);
+    // setState(() {
+    //   this.categoriesList = categoriesList;
+    // });
+  }
+
+  void getProductsByCategory() async {
+    if (selectedCategory != null) {
+      var products = await _productsService.fetchProductsByCategory(
+        selectedCategory as String,
+      );
+
+      setState(() {
+        _products = products;
+      });
+    }
   }
 }
 
@@ -272,102 +447,105 @@ class ProductPageState extends State<ProductPage> {
       body:
           _product == null
               ? const Center(child: CircularProgressIndicator())
-              : Column(
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        flex: 1,
-                        child: Image.network(
-                          _product!.images[0],
-                          fit: BoxFit.cover,
+              : SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          flex: 1,
+                          child: Image.network(
+                            _product!.images[0],
+                            fit: BoxFit.cover,
+                          ),
                         ),
-                      ),
-                      Flexible(
-                        // Wrap details column in Flexible
-                        flex: 1,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.star,
-                                  color: Colors.amber,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _product!.rating.toString(),
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: Colors.black54),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _product!.title,
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _product!.description,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '\$${_product!.price.toStringAsFixed(2)}',
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.titleLarge?.copyWith(
-                                    color: Colors.green[700],
-                                    fontWeight: FontWeight.bold,
+                        Flexible(
+                          flex: 1,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.star,
+                                    color: Colors.amber,
+                                    size: 20,
                                   ),
-                                ),
-                                Text('add to cart filler'),
-                              ],
-                            ),
-                          ],
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _product!.rating.toString(),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(color: Colors.black54),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _product!.title,
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _product!.description,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    '\$${_product!.price.toStringAsFixed(2)}',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleLarge?.copyWith(
+                                      color: Colors.green[700],
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text('add to cart filler'),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
 
-                  // Reviews
-                  const SizedBox(height: 16),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 16.0),
-                      child: Text(
-                        'Reviews',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
+                    // Reviews
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 16.0),
+                        child: Text(
+                          'Reviews',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  ListView.builder(
-                    itemCount: _product!.reviews.length,
-                    shrinkWrap: true,
-                    itemBuilder: (context, index) {
-                      final review = _product!.reviews[index];
-                      return ListTile(
-                        title: Text(review.comment),
-                        subtitle: Text(
-                          '${review.rating} stars by ${review.reviewerName}',
-                        ),
-                        trailing: Text(
-                          review.date.toLocal().toString().split(' ')[0],
-                        ),
-                      );
-                    },
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    ListView.builder(
+                      itemCount: _product!.reviews.length,
+                      shrinkWrap: true,
+                      itemBuilder: (context, index) {
+                        final review = _product!.reviews[index];
+                        return ListTile(
+                          title: Text(review.comment),
+                          subtitle: Text(
+                            '${review.rating} stars by ${review.reviewerName}',
+                          ),
+                          trailing: Text(
+                            review.date.toLocal().toString().split(' ')[0],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
     );
   }
